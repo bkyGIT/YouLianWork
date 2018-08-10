@@ -1,0 +1,233 @@
+package com.yl.transaction.fixOrder.controller;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.yl.common.controller.BaseController;
+import com.yl.common.dao.PublicDao;
+import com.yl.common.pojo.PageBean;
+import com.yl.common.pojo.Result;
+import com.yl.common.user.pojo.UserView;
+import com.yl.common.user.service.UserService;
+import com.yl.common.util.DateUtils;
+import com.yl.transaction.fixOrder.service.FixOrderService;
+
+@Controller
+@RequestMapping("/fixOrder")
+public class FixOrderController extends BaseController {
+
+	@Resource
+	private FixOrderService fixOrderService;
+	
+	@Resource
+	private UserService userService;
+	
+	@Resource
+	private PublicDao publicDao;
+
+	@RequestMapping("/orderList")
+	@ResponseBody
+	public PageBean orderList(String begin_time, String end_time, String fix_type, String fix_xq, String orderStatus, HttpServletRequest request, HttpServletResponse response,
+			Model model) {
+		Date beginTime = null;
+		Date endTime = null;
+		PageBean pageBean = new PageBean();
+		try {
+			if (begin_time != null && !begin_time.equals("")) {
+				beginTime = DateUtils.dateParse(begin_time+" 00:00:00", DateUtils.DATE_TIME_PATTERN);
+			}
+			if (end_time != null && !end_time.equals("")) {
+				endTime = DateUtils.dateParse(end_time+" 23:59:59", DateUtils.DATE_TIME_PATTERN);
+			}
+			UserView userView = this.getUserView(request);
+			String roleLevel = userView.getRoleLevel();
+			String fixID = userView.getMaxaccept();
+			String fixDeptID = userView.getDeptCode();
+			String page = request.getParameter("page");
+			String rows = request.getParameter("rows");
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("page", Integer.parseInt(page));
+			param.put("beginTime", beginTime);
+			param.put("endTime", endTime);
+			param.put("fix_type", fix_type);
+			param.put("fix_xq", fix_xq);
+
+			param.put("rows", Integer.parseInt(rows));
+			param.put("roleLevel", roleLevel);
+			param.put("fixID", fixID);
+			param.put("fixDeptID", fixDeptID);
+			param.put("orderStatus", orderStatus);
+			// 获取分页数据
+			List<Map<String, String>> orderList = fixOrderService.getAllOrder(param);
+
+			// 获取总数量
+			String total = fixOrderService.getTotalOrder(param);
+			pageBean.setTotal(total);
+			pageBean.setRows(orderList);
+			pageBean.setSuccess("success");
+		} catch (ParseException e) {
+			logger.error(e);
+		}
+		return pageBean;
+	}
+
+	/**
+	 * 获取维护人员
+	 * 
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/getFixPerson")
+	@ResponseBody
+	public List<Map<String, String>> getFixPerson(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> fixList = null;
+		try {
+			UserView userView = this.getUserView(request);
+			String deptCode = userView.getDeptCode();
+			Map<String, String> param = new HashMap<String, String>();
+			param.put("deptCode", deptCode);
+			param.put("roleLevel", "2");
+			fixList = userService.getUserByParm(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return fixList;
+	}
+	/**
+	 * 维护工单下发
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param ids
+	 * @param fix_person
+	 * @return
+	 */
+	@RequestMapping("/sendOrder")
+	@ResponseBody
+	public Result sendOrder(HttpServletRequest request, HttpServletResponse response, Model model, String send_ids, String fix_person) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		if(send_ids.contains(",")){
+			send_ids = send_ids.substring(0, send_ids.length()-1);
+		}
+		try {
+			UserView fixUser = userService.getUserView(fix_person);
+			Map<String, String> param = new HashMap<String, String>();
+			param.put("ids", send_ids);
+			param.put("fixUserID", fix_person);
+			param.put("fixUserName", fixUser.getUserName());
+			param.put("fixDeptID", fixUser.getDeptCode());
+			param.put("orderStatus", "23");
+			fixOrderService.sendToFix(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result;
+	}
+	/**
+	 * 工单提交
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param send_ids
+	 * @param fix_person
+	 * @return
+	 */
+	@RequestMapping("/commitOrder")
+	@ResponseBody
+	public Result commitOrder(HttpServletRequest request, HttpServletResponse response, Model model, String commit_ids, String fix_mark) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		try {
+			Map<String, String> param = new HashMap<String, String>();
+			param.put("ids", commit_ids);
+			param.put("orderStatus", "24");
+			param.put("fix_mark", fix_mark);
+			fixOrderService.commitOrder(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result;
+	}
+	/**
+	 * 维护工单查询列表（因为多个状态一起查询用in所以不复用orderList方法）
+	 * @param begin_time
+	 * @param end_time
+	 * @param fix_type
+	 * @param fix_xq
+	 * @param orderStatus
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/fixOrderQueryList")
+	@ResponseBody
+	public PageBean fixOrderQueryList(String begin_time, String end_time, String order_type, String fix_type, String fix_xq, String orderStatus, HttpServletRequest request, HttpServletResponse response,
+			Model model) {
+		Date beginTime = null;
+		Date endTime = null;
+		PageBean pageBean = new PageBean();
+		try {
+			if (begin_time != null && !begin_time.equals("")) {
+				beginTime = DateUtils.dateParse(begin_time+" 00:00:00", DateUtils.DATE_TIME_PATTERN);
+			}
+			if (end_time != null && !end_time.equals("")) {
+				endTime = DateUtils.dateParse(end_time+" 23:59:59", DateUtils.DATE_TIME_PATTERN);
+			}
+			UserView userView = this.getUserView(request);
+			String roleLevel = userView.getRoleLevel();
+			String fixID = userView.getMaxaccept();
+			String fixDeptID = userView.getDeptCode();
+			String page = request.getParameter("page");
+			String rows = request.getParameter("rows");
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("page", Integer.parseInt(page));
+			param.put("beginTime", beginTime);
+			param.put("endTime", endTime);
+			param.put("fix_type", fix_type);
+			param.put("fix_xq", fix_xq);
+			param.put("order_type", order_type);
+
+			param.put("rows", Integer.parseInt(rows));
+			param.put("roleLevel", roleLevel);
+			param.put("fixID", fixID);
+			param.put("fixDeptID", fixDeptID);
+			param.put("orderStatus", orderStatus);
+			PageHelper.startPage(Integer.parseInt(page), Integer.parseInt(rows));
+			// 获取分页数据
+			List<Map<String, String>> orderList = fixOrderService.getFixOrderQueryList(param);
+			PageInfo<Map<String, String>> pageinfo = new PageInfo<Map<String, String>>(orderList);
+
+			pageBean.setTotal(pageinfo.getTotal()+"");
+			pageBean.setRows(orderList);
+			pageBean.setSuccess("success");
+		} catch (ParseException e) {
+			logger.error(e);
+		}
+		return pageBean;
+	}
+}

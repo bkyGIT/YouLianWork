@@ -1,0 +1,183 @@
+package com.yl.transaction.order.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.yl.common.controller.BaseController;
+import com.yl.common.dao.PublicDao;
+import com.yl.common.pojo.PageBean;
+import com.yl.common.util.DBUtil;
+import com.yl.transaction.order.service.OrderService;
+
+@Controller
+@RequestMapping("/order")
+public class OrderController extends BaseController{
+	
+	@Resource
+	private OrderService orderService;
+	
+	@Resource
+	private PublicDao publicDao;
+	
+	@RequestMapping("/orderList")
+	public void orderList(HttpServletRequest request, HttpServletResponse response, Model model){
+		String page = request.getParameter("page");
+		String rows = request.getParameter("rows");
+		Map<String, Object> param = new HashMap<String, Object>();
+		param.put("page", Integer.parseInt(page));
+		param.put("rows", Integer.parseInt(rows));
+		//获取分页数据
+		List<Map<String, String>> orderList = orderService.getAllOrder(param);
+		
+		//获取总数量
+		String total = orderService.getTotalOrder();
+		PageBean pageBean = new PageBean();
+		pageBean.setTotal(total);
+		pageBean.setRows(orderList);
+		pageBean.setSuccess("success");
+		pageWrite(response, pageBean);
+	}
+	
+	
+	/**
+	 * 增加工单
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/addOrder")
+	public void addOrder(HttpServletRequest request, HttpServletResponse response, Model model) {
+		String ordertype = request.getParameter("order_types"); 
+		String fixtype = request.getParameter("order_fix_type"); 
+		String oprid = request.getParameter("order_opr_id"); 
+		String custid = request.getParameter("order_cust_id");
+		String orderstatus = request.getParameter("order_status"); 
+		String fixusername = request.getParameter("order_fixuser_name");
+		String deptcode = request.getParameter("order_dept_code"); 
+		String ordermark = request.getParameter("order_mark");
+		String orderdgree = request.getParameter("order_dgree"); 
+		String oprdeptid = request.getParameter("order_opr_dept_id"); 
+		String fixmark = request.getParameter("order_fix_mark");
+		Map<String, String> param = new HashMap<String, String>(); 
+		
+		param.put("ordertype", ordertype);
+		param.put("fixtype", fixtype);
+		param.put("oprid", oprid);
+		param.put("custid", custid);
+		param.put("orderstatus", orderstatus);
+		param.put("fixusername", fixusername);
+		param.put("fixdeptcode", deptcode);
+		param.put("ordermark", ordermark);
+		param.put("orderdgree", orderdgree);
+		param.put("oprdeptid", oprdeptid);
+		param.put("fixmark", fixmark);
+		param.put("maxaccept", DBUtil.getMaxaccept(publicDao));
+		
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		try {
+			orderService.addOrder(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		write(response, result);
+	}
+	
+	/**
+	 * 删除工单
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/delOrder")
+	public void delPersonnel(HttpServletRequest request, HttpServletResponse response, Model model) {
+		String ids = request.getParameter("ids");
+		if(ids.contains(",")){
+			ids = ids.substring(0, ids.length()-1);
+		}
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		try {
+			orderService.delOrderInIDS(ids);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		write(response, result);
+	}
+	
+	/**
+	 * 修改工单信息
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/modifyOrder")
+	public void modifyOrder(HttpServletRequest request, HttpServletResponse response, Model model) {
+		String maxaccept = request.getParameter("personnel_maxaccept");
+		String account = request.getParameter("personnel_account");
+		String pwd = request.getParameter("personnel_pwd");
+		String name = request.getParameter("personnel_name");
+		String phone = request.getParameter("personnel_phone");
+		String tel = request.getParameter("personnel_tel");
+		String address = request.getParameter("personnel_address");
+		String role = request.getParameter("personnel_role");
+		String dept = request.getParameter("personnel_dept");
+		Map<String, String> param = new HashMap<String, String>();
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		try {
+			param.put("maxaccept", maxaccept);
+			param.put("account", account);
+			param.put("pwd", pwd);
+			param.put("name", name);
+			param.put("phone", phone);
+			param.put("tel", tel);
+			param.put("address", address);
+			param.put("role", role);
+			param.put("dept", dept);
+			
+			orderService.updateOrderByID(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		write(response, result);
+	}
+	
+	
+	/**
+	 * 加载工单类型
+	 */
+	@RequestMapping("/getOrderTypeList")
+	public void orderTypeList(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> orderTypeList = orderService.getOrderTypeList();
+		write(response, orderTypeList);
+	}
+	
+	/**
+	 * 取消工单
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/removeOrder")
+	public void removeOrder(HttpServletRequest request, HttpServletResponse response, Model model) {
+		
+	}
+
+}

@@ -1,0 +1,11 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%
+	String webpath = request.getContextPath();
+	String url = request.getParameter("url");
+%>
+<!-- 引入公共js -->
+<jsp:include page="/common/jsp/commonHeader.jsp" flush="true" />
+<script type="text/javascript" src="<%=webpath%>/transaction/main/index.js"></script>
+<jsp:include page="<%=url%>"/>
+
+<!-- 下发开发软电话弹窗功能 -->

@@ -1,0 +1,61 @@
+package com.yl.transaction.order.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import com.yl.transaction.order.dao.OrderDao;
+import com.yl.transaction.order.service.OrderService;
+
+@Service("orderService")
+public class OrderServiceImpl implements OrderService {
+	
+	@Resource
+	private OrderDao orderDao;
+
+	public List<Map<String, String>> getAllOrder(Map<String, Object> param) {
+		return orderDao.getAllOrder(param);
+	}
+
+	public void addOrder(Map<String, String> param) {
+		orderDao.addOrder(param);
+	}
+
+	public void delOrderInIDS(String ids) {
+		orderDao.delOrderInIDS(ids);
+	}
+
+	public void updateOrderByID(Map<String, String> param) {
+		orderDao.updateOrderByID(param);
+	}
+
+	public List<Map<String, String>> getOrderByAccount(String account) {
+		return orderDao.getOrderByAccount(account);
+	}
+
+	public String getTotalOrder() {
+		return orderDao.getTotalOrder();
+	}
+
+	public List<Map<String, String>> getOrderTypeList() {
+		return orderDao.getOrderTypeList();
+	}
+
+	public List<Map<String, String>> getFixTypeList() {
+		return orderDao.getFixTypeList();
+	}
+
+	public List<Map<String, String>> getOrderStatus() {
+		return orderDao.getOrderStatus();
+	}
+
+	public List<Map<String, String>> getOrderDgree() {
+		return orderDao.getOrderDgree();
+	}
+
+	
+
+}

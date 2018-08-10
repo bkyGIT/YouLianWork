@@ -1,0 +1,628 @@
+package com.yl.transaction.order.controller;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.yl.common.controller.BaseController;
+import com.yl.common.dao.PublicDao;
+import com.yl.common.pojo.PageBean;
+import com.yl.common.pojo.Result;
+import com.yl.common.user.pojo.User;
+import com.yl.common.user.pojo.UserView;
+import com.yl.common.util.DBUtil;
+import com.yl.common.util.DateUtils;
+import com.yl.transaction.dept.service.DeptService;
+import com.yl.transaction.order.service.OrderService;
+
+@Controller
+@RequestMapping("/order")
+public class OrderController extends BaseController{
+	
+	@Resource
+	private OrderService orderService;
+	@Resource
+	private DeptService deptService;
+	
+	@Resource
+	private PublicDao publicDao;
+	
+	@RequestMapping("/orderList")
+	@ResponseBody
+	public PageBean orderList(String creat_time,String order_type,String fix_type,
+			HttpServletRequest request, HttpServletResponse response, Model model){
+		 SimpleDateFormat myFmt1=new SimpleDateFormat("yy-MM-dd"); 
+		Date creatTime=null;
+		if(creat_time!=null&&!creat_time.equals("")) {
+			try {
+				creatTime=myFmt1.parse(creat_time);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		}
+		UserView userView = this.getUserView(request);
+		String roleLevel = userView.getRoleLevel();
+		String oprID = userView.getMaxaccept();
+		String oprDeptID = userView.getDeptCode();
+		String page = request.getParameter("page");
+		String rows = request.getParameter("rows");
+		Map<String, Object> param = new HashMap<String, Object>();
+		param.put("page", Integer.parseInt(page));
+		param.put("creattime", creatTime);
+		param.put("order_type", order_type);
+		param.put("fix_type", fix_type);
+		
+		param.put("rows", Integer.parseInt(rows));
+		param.put("roleLevel", roleLevel);
+		param.put("oprID", oprID);
+		param.put("oprDeptID", oprDeptID);
+		param.put("orderStatus", "20");
+		PageHelper.startPage(Integer.parseInt(page), Integer.parseInt(rows));
+		//获取分页数据
+		List<Map<String, String>> orderList = orderService.getAllOrder(param);
+		PageInfo<Map<String, String>> pageinfo = new PageInfo<Map<String, String>>(orderList);
+		/*//获取总数量
+		String total = orderService.getTotalOrder(param);*/
+		PageBean pageBean = new PageBean();
+		pageBean.setTotal(pageinfo.getTotal()+"");
+		pageBean.setRows(orderList);
+		pageBean.setSuccess("success");
+		
+		/*pageWrite(response, pageBean);*/
+		return pageBean;
+	}
+	
+	
+	/**
+	 * 增加工单
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/addOrder")
+	public void addOrder(HttpServletRequest request, HttpServletResponse response, Model model) {
+		User user = (User)request.getSession().getAttribute("userInfo");
+		System.out.println(user);
+		String ordertype = request.getParameter("order_types"); 
+		String fixtype = request.getParameter("order_fix_type"); 
+		String oprid = request.getParameter("order_opr_id"); 
+		String custid = request.getParameter("order_cust_id");
+		String orderstatus = request.getParameter("order_status"); 
+		String fixusername = request.getParameter("order_fixuser_name");
+		String deptcode =request.getParameter("order_dept_code"); 
+		String ordermark = request.getParameter("order_mark");
+		String orderdgree = request.getParameter("order_dgree"); 
+		String oprdeptid = user.getDeptCode();//request.getParameter("order_opr_dept_id"); //客服部门
+		Map<String, String> param = new HashMap<String, String>(); 
+		
+		param.put("ordertype", ordertype);
+		param.put("fixtype", fixtype);
+		param.put("oprid", oprid);
+		param.put("custid", custid);
+		param.put("orderstatus", orderstatus);
+		param.put("fixusername", fixusername);
+		param.put("deptcode", deptcode);
+		param.put("ordermark", ordermark);
+		param.put("orderdgree", orderdgree);
+		param.put("oprdeptid", oprdeptid);
+		//param.put("maxaccept", DBUtil.getMaxaccept(publicDao));
+		
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		try {
+			orderService.addOrder(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		write(response, result);
+	}
+	
+	
+	
+	
+	/**
+	 * 编辑工单信息
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/modifyOrder")
+	public void modifyOrder(HttpServletRequest request, HttpServletResponse response, Model model) {
+		String maxaccept = request.getParameter("order_maxaccept");
+		
+		String ordertype = request.getParameter("order_types"); 
+		String fixtype = request.getParameter("order_fix_type"); 
+		String ordermark = request.getParameter("order_mark"); 
+		String phone = request.getParameter("order_phone");
+		Map<String, String> param = new HashMap<String, String>();
+		
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		try {
+			param.put("maxaccept", maxaccept);
+			param.put("ordertype", ordertype);
+			param.put("fixtype", fixtype);
+			param.put("ordermark", ordermark);
+			param.put("phone", phone);
+			
+			orderService.updateOrderByID(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		write(response, result);
+	}
+	
+	
+	/**
+	 * 加载工单类型
+	 */
+	@RequestMapping("/getOrderTypeList")
+	public void orderTypeList(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> orderTypeList = orderService.getOrderTypeList();
+		write(response, orderTypeList);
+	}
+	
+	/**
+	 * 加载维护类型
+	 */
+	@RequestMapping("/getFixTypeList")
+	public void getFixTypeList(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> fixTypeList = orderService.getFixTypeList();
+		write(response, fixTypeList);
+	}
+	
+	/**
+	 * 加载工单装状态
+	 */
+	@RequestMapping("/getOrderStatus")
+	public void getOrderStatus(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> orderStatus = orderService.getOrderStatus();
+		write(response, orderStatus);
+	}
+	
+	/**
+	 * 加载客客户满意度
+	 */
+	@RequestMapping("/getOrderDgree")
+	public void getOrderDgree(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> orderDgree = orderService.getOrderDgree();
+		write(response, orderDgree);
+	}
+	
+	/**
+	 * 加载客户联系方式
+	 */
+	@RequestMapping("/getOrderPhone")
+	public void getOrderPhone(HttpServletRequest request, HttpServletResponse response, Model model) {
+		List<Map<String, String>> orderPhone = orderService.getOrderPhone();
+		write(response, orderPhone);
+	}
+	/**
+	 * 根据部门类型获取部门下人员
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/getUserByDeptType")
+	@ResponseBody
+	public List<Map<String, String>> getUserByDeptType(String deptType, HttpServletRequest request, HttpServletResponse response, Model model) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("deptType", deptType);
+		List<Map<String, String>> userList = orderService.getUserByDeptType(param);
+		return userList;
+	}
+	/**
+	 * 公共获取转换码方法
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/getCommonCode")
+	public void getCommonCode(HttpServletRequest request, HttpServletResponse response, Model model, String codeKey, String codeIDS) {
+		Map<String, String> param = new HashMap<String, String>();
+		param.put("codeKey", codeKey);
+		param.put("codeIDS", codeIDS);
+		List<Map<String, String>> orderStatus = orderService.getCommonCode(param);
+		write(response, orderStatus);
+	}
+	
+	/**
+	 * 取消工单
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/removeOrder")
+	public @ResponseBody Result removeOrder(String ids,
+			HttpServletRequest request, HttpServletResponse response, Model model) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		if(ids.contains(","))
+			ids = ids.substring(0, ids.length()-1);
+		try {
+//			orderService.removeOrder(ids);
+			Map<String, String> param = new HashMap<String, String>();
+			param.put("ids", ids);
+			param.put("status", "21");
+			orderService.updateOrderStatus(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result;
+		
+	}
+	/**
+	 * 客服工单派发至维护部门fv
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/sendToFix")
+	@ResponseBody
+	public Result sendToFix(String[] ids,String fix_dept_id,HttpServletRequest request,
+			HttpServletResponse response, Model model) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		try {
+			orderService.sendToFixInIds(ids,fix_dept_id);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result; 
+	}
+	/**
+	 * 微信工单派发
+	 * @param ids
+	 * @param fix_dept_id
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/sendToFixWeixin")
+	@ResponseBody
+	public Result sendToFixWeixin(String ids,String fix_dept_id,HttpServletRequest request,
+			HttpServletResponse response, Model model) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		try {
+			String[] idArr = ids.split(",");
+				
+			orderService.sendToFixInIds(idArr,fix_dept_id);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result; 
+	}
+	@RequestMapping("/getFixdeptidList")
+	@ResponseBody
+	public List<Map<String, Object>>  getFixdeptidList() {
+		List<Map<String, Object>> list=orderService.getFixdeptidList();
+		return list;
+	}
+	
+	/**
+	 * 客服工单查询（因为查询多个状态工单用IN防止效率问题不和orderQuery复用）
+	 * @param creat_time
+	 * @param order_type
+	 * @param fix_type
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/orderQueryList")
+	@ResponseBody
+	public PageBean orderQueryList(String begin_time, String end_time,String order_type,String fix_type, String fix_xq, String orderStatus, String orderChannel, 
+			HttpServletRequest request, HttpServletResponse response, Model model){
+		Date beginTime = null;
+		Date endTime = null;
+		PageBean pageBean = new PageBean();
+		try{
+			
+			if (begin_time != null && !begin_time.equals("")) {
+				beginTime = DateUtils.dateParse(begin_time, DateUtils.DATE_PATTERN);
+			}
+			if (end_time != null && !end_time.equals("")) {
+				endTime = DateUtils.dateParse(end_time, DateUtils.DATE_PATTERN);
+			}
+			UserView userView = this.getUserView(request);
+			String roleLevel = userView.getRoleLevel();
+			String oprID = userView.getMaxaccept();
+			String oprDeptID = userView.getDeptCode();
+			String page = request.getParameter("page");
+			String rows = request.getParameter("rows");
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("page", Integer.parseInt(page));
+			param.put("beginTime", beginTime);
+			param.put("endTime", endTime);
+			param.put("order_type", order_type);
+			param.put("fix_type", fix_type);
+			param.put("fix_xq", fix_xq);
+			
+			param.put("rows", Integer.parseInt(rows));
+			param.put("roleLevel", roleLevel);
+			param.put("oprID", oprID);
+			param.put("oprDeptID", oprDeptID);
+			param.put("orderStatus", orderStatus);
+			param.put("orderChannel", orderChannel);
+			PageHelper.startPage(Integer.parseInt(page), Integer.parseInt(rows));
+			//获取分页数据
+			List<Map<String, String>> orderList = orderService.getAllQueryOrder(param);
+			PageInfo<Map<String, String>> pageinfo = new PageInfo<Map<String, String>>(orderList);
+			
+			pageBean.setTotal(pageinfo.getTotal()+"");
+			pageBean.setRows(orderList);
+			pageBean.setSuccess("success");
+		}catch(Exception e){
+			logger.error(e);
+		}
+		
+		/*pageWrite(response, pageBean);*/
+		return pageBean;
+	}
+	/**
+	 * 工单回访
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping("/revewOrder")
+	@ResponseBody
+	public Result revewOrder(HttpServletRequest request, HttpServletResponse response, Model model, String review_id, String review_degree) {
+		Map<String, String> param = new HashMap<String, String>();
+		
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		try {
+			param.put("maxaccept", review_id);
+			param.put("reviewDegree", review_degree);
+			param.put("orderStatus", "25");
+			orderService.revewOrderByID(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result;
+	}
+	
+	
+	//查询全部工单数量
+	@RequestMapping("/getOrderNumByTime")
+	@ResponseBody
+	public List<Map<String, Object>> getOrderNumByTime(String beginTime, String endTime, String userId, HttpServletRequest request, HttpServletResponse response, Model model){
+		Date stratTime = null;
+		Date overTime = null;
+		String userID = null;
+		if(userId != null && userId != ""){
+			userID = userId;
+		}
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+		try{
+			if (beginTime != null && !beginTime.equals("")) {
+				stratTime = DateUtils.dateParse(beginTime, DateUtils.DATE_PATTERN);
+			}
+			if (endTime != null && !endTime.equals("")) {
+				overTime = DateUtils.dateParse((endTime.concat(" 23:59:59")), DateUtils.HOUR_PATTERN);
+			}
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("creatTime", stratTime);
+			param.put("overTime", overTime);
+			param.put("userId", userID);
+			dataList = orderService.getOrderNumByTime(param);
+		}catch(Exception e){
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return dataList;
+	}
+	
+	//查询已完成工单数量
+	@RequestMapping("/getAccessOrderNumByTime")
+	@ResponseBody
+	public List<Map<String, Object>> getAccessOrderNumByTime(String beginTime, String endTime, String userId, HttpServletRequest request, HttpServletResponse response, Model model){
+		Date stratTime = null;
+		Date overTime = null;
+		String userID = null;
+		if(userId != null && userId != ""){
+			userID = userId;
+		}
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+		try{
+			if (beginTime != null && !beginTime.equals("")) {
+				stratTime = DateUtils.dateParse(beginTime, DateUtils.DATE_PATTERN);
+			}
+			if (endTime != null && !endTime.equals("")) {
+				overTime = DateUtils.dateParse((endTime.concat(" 23:59:59")), DateUtils.HOUR_PATTERN);
+			}
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("creatTime", stratTime);
+			param.put("overTime", overTime);
+			param.put("userId", userID);
+			dataList = orderService.getAccessOrderNumByTime(param);
+		}catch(Exception e){
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return dataList;
+	}
+	
+	//查询待完成工单数量
+	@RequestMapping("/getUnAccessOrderNumByTime")
+	@ResponseBody
+	public List<Map<String, Object>> getUnAccessOrderNumByTime(String beginTime, String endTime, String userId, HttpServletRequest request, HttpServletResponse response, Model model){
+		Date stratTime = null;
+		Date overTime = null;
+		String userID = null;
+		if(userId != null && userId != ""){
+			userID = userId;
+		}
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+		try{
+			if (beginTime != null && !beginTime.equals("")) {
+				stratTime = DateUtils.dateParse(beginTime, DateUtils.DATE_PATTERN);
+			}
+			if (endTime != null && !endTime.equals("")) {
+				overTime = DateUtils.dateParse((endTime.concat(" 23:59:59")), DateUtils.HOUR_PATTERN);
+			}
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("creatTime", stratTime);
+			param.put("overTime", overTime);
+			param.put("userId", userID);
+			dataList = orderService.getUnAccessOrderNumByTime(param);
+		}catch(Exception e){
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return dataList;
+	}
+	/**
+	 * 公众号工单列表
+	 * @param creat_time
+	 * @param order_type
+	 * @param fix_type
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/weixinList")
+	@ResponseBody
+	public PageBean weixinList(String begin_time, String end_time,String order_type, String orderStatus, 
+			HttpServletRequest request, HttpServletResponse response, Model model){
+		Date beginTime = null;
+		Date endTime = null;
+		PageBean pageBean = new PageBean();
+		try{
+			
+			if (begin_time != null && !begin_time.equals("")) {
+				beginTime = DateUtils.dateParse(begin_time, DateUtils.DATE_PATTERN);
+			}
+			if (end_time != null && !end_time.equals("")) {
+				endTime = DateUtils.dateParse(end_time, DateUtils.DATE_PATTERN);
+			}
+			UserView userView = this.getUserView(request);
+			String roleLevel = userView.getRoleLevel();
+			String oprID = userView.getMaxaccept();
+			String oprDeptID = userView.getDeptCode();
+			String page = request.getParameter("page");
+			String rows = request.getParameter("rows");
+			Map<String, Object> param = new HashMap<String, Object>();
+			param.put("page", Integer.parseInt(page));
+			param.put("beginTime", beginTime);
+			param.put("endTime", endTime);
+			param.put("order_type", order_type);
+			
+			param.put("rows", Integer.parseInt(rows));
+			param.put("roleLevel", roleLevel);
+			param.put("oprID", oprID);
+			param.put("oprDeptID", oprDeptID);
+			param.put("orderStatus", orderStatus);
+			PageHelper.startPage(Integer.parseInt(page), Integer.parseInt(rows));
+			//获取分页数据
+			List<Map<String, String>> orderList = orderService.getAllWeixinQueryOrder(param);
+			PageInfo<Map<String, String>> pageinfo = new PageInfo<Map<String, String>>(orderList);
+			
+			pageBean.setTotal(pageinfo.getTotal()+"");
+			pageBean.setRows(orderList);
+			pageBean.setSuccess("success");
+		}catch(Exception e){
+			logger.error(e);
+		}
+		
+		/*pageWrite(response, pageBean);*/
+		return pageBean;
+	}
+	
+	@RequestMapping("/changeWeixinOrder")
+	@ResponseBody
+	public Result changeWeixinOrder(String order_id, String opr_id, HttpServletRequest request, HttpServletResponse response, Model model) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		if(order_id.contains(","))
+			order_id = order_id.substring(0, order_id.length()-1);
+		try {
+//			orderService.removeOrder(ids);
+			Map<String, String> param = new HashMap<String, String>();
+			param.put("ids", order_id);
+			param.put("opr_id", opr_id);
+			orderService.addOrderOprInfoByID(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result;
+		
+	}
+	/**
+	 * 微信公众号投诉提交
+	 * @param order_id
+	 * @param opr_id
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/adviseSubmit")
+	@ResponseBody
+	public Result adviseSubmit(String advice_type, String cust_name, String cust_phone, String cust_address, String order_mark, HttpServletRequest request, HttpServletResponse response, Model model) {
+		result.setResultCode("0000");
+		result.setResultMsg("操作成功！");
+		
+		try {
+			Map<String, String> param = new HashMap<String, String>();
+			param.put("maxaccept", DBUtil.getMaxaccept(publicDao));
+			param.put("advice_type", advice_type);
+			param.put("cust_name", cust_name);
+			param.put("cust_phone", cust_phone);
+			param.put("cust_address", cust_address);
+			param.put("order_mark", order_mark);
+			param.put("deptType", "61");
+			//获取客服部门ID
+			List<Map<String, String>> deptList = deptService.getDeptByType(param);
+			if(deptList != null)
+				param.put("deptID", deptList.get(0).get("MAXACCEPT"));
+			orderService.insertWeixinOrder(param);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setResultCode("9999");
+			result.setResultMsg("操作失败!" + e);
+		}
+		return result;
+		
+	}
+}

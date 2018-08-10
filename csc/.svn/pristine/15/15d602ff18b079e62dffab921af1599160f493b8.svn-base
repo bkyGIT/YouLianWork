@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yl.transaction.order.dao.OrderDao">
+
+	<!--获取全部工单 -->
+	<select id="getAllOrder" resultType="java.util.Map">
+		select a.MAXACCEPT,
+		a.ORDER_TYPE,
+		b.code_name OT,
+		a.FIX_TYPE,
+		c.code_name FT,
+		a.OPR_ID,
+		a.CUST_ID,
+		a.ORDER_STATUS,
+		d.code_name OS,
+		a.FIXUSER_NAME,
+		a.FIX_DEPT_CODE,
+		a.ORDER_MARK,
+		to_char(a.CREAT_TIME,'YYYY-MM-DD') CREAT_TIME,
+		a.ORDER_DGREE,
+		e.code_name OD,
+		to_char(a.UPDATE_TIME,'YYYY-MM-DD') UPDATE_TIME,
+		a.OPR_DEPT_ID,
+		a.FIX_MARK,
+		a.STATUS
+		from t_order a, (select * from t_common_code where code_key='ORDER_TYPE')
+		b,
+		(select * from t_common_code where code_key='FIX_TYPE') c,
+		(select * from t_common_code where code_key='ORDER_STATUS') d,
+		(select * from t_common_code where code_key='ORDER_DGREE') e
+		where a.order_type=b.code_id
+		and a.fix_type=c.code_id
+		and a.order_status=d.code_id
+		and a.order_dgree=e.code_id 
+		and a.status='1'
+	</select>
+
+	<!--分页查询总工单 -->
+	<select id="getTotalOrder" resultType="String">
+		select count(1) TOTAL from
+		t_order
+	</select>
+
+	<!-- 增加工单 -->
+	<insert id="addOrder" parameterType="java.util.Map">
+		insert into
+		t_order(maxaccept,order_type,fix_type,opr_id,cust_id,order_status,fixuser_name,fix_dept_code,order_mark,order_dgree,opr_dept_id,creat_time,update_time,status)
+		values
+		(${maxaccept},#{ordertype},#{fixtype},#{oprid},#{custid},#{orderstatus},#{fixusername},#{deptcode},#{ordermark},#{orderdgree},#{oprdeptid},sysdate,sysdate,'1')
+	</insert>
+
+	<!--获取工单类型 -->
+	<select id="getOrderTypeList" resultType="java.util.Map">
+		select
+		code_id,code_name from T_COMMON_CODE where code_key = 'ORDER_TYPE'
+	</select>
+
+	<!-- 获取工单维护类型 -->
+	<select id="getFixTypeList" resultType="java.util.Map">
+		select code_id,code_name
+		from T_COMMON_CODE where code_key = 'FIX_TYPE'
+	</select>
+
+	<!-- 获取工单状态 -->
+	<select id="getOrderStatus" resultType="java.util.Map">
+		select code_id,code_name
+		from T_COMMON_CODE where code_key = 'ORDER_STATUS'
+	</select>
+
+	<!-- 获取客户满意度 -->
+	<select id="getOrderDgree" resultType="java.util.Map">
+		select code_id,code_name
+		from T_COMMON_CODE where code_key = 'ORDER_DGREE'
+	</select>
+
+	<!-- 修改工单 -->
+	<insert id="updateOrderByID" parameterType="java.util.Map">
+		update t_order set
+		order_type=#{ordertype}, fix_type=#{fixtype}, opr_id=#{oprid},
+		cust_id=#{custid}, order_status=#{orderstatus},
+		fixuser_name=#{fixusername}, fix_dept_code=#{deptcode},
+		order_mark=#{ordermark}, order_dgree=#{orderdgree},
+		opr_dept_id=#{oprdeptid} where maxaccept=#{maxaccept}
+	</insert>
+
+
+	<!-- 取消工单 -->
+	<insert id="removeOrder" parameterType="String"> 
+		update t_order set status='0' where maxaccept = ${ids}
+	</insert>
+
+	<!-- 根据客户ID获取客户信息 -->
+	<!-- <select id="getOrderByAccount" resultType="java.util.Map" parameterType="String"> 
+		select MAXACCEPT,ORDER_TYPE,FIX_TYPE,OPR_ID,CUST_ID,ORDER_STATUS,FIXUSER_NAME,FIX_DEPT_CODE,ORDER_MARK,ORDER_MARK,CREAT_TIME,ORDER_DGREE,UPDATE_TIME,OPR_DEPT_ID 
+		from t_order where CUST_ID=#{custid} </select> -->
+</mapper>  

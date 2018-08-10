@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yl.transaction.conver.dao.ConverDao">
+
+	<!--分页获取查询工单 -->
+	<select id="getAllConverList" resultType="java.util.Map" parameterType="java.util.Map">
+		select  a.MAXACCEPT A_MAXACCEPT,
+		      a.ORDER_TYPE A_ORDER_TYPE, (select CODE_NAME from t_common_code where code_key='ORDER_TYPE' and code_id=a.order_type) A_ORDER_TYPE_NAME, 
+		      a.FIX_TYPE A_FIX_TYPE, (select CODE_NAME from t_common_code where code_key='FIX_TYPE' and code_id=a.FIX_TYPE) A_FIX_TYPE_NAME, 
+		      a.OPR_ID A_OPR_ID,a.OPR_NAME A_OPR_NAME,a.OPR_DEPT_ID A_OPR_DEPT_ID,a.CUST_ID A_CUST_ID,a.CUST_NAME A_CUST_NAME,
+		      a.ORDER_STATUS A_ORDER_STATUS,(select CODE_NAME from t_common_code where code_key='ORDER_STATUS' and code_id=a.ORDER_STATUS) A_ORDER_STATUS_NAME, 
+		      a.FIXUSER_ID A_FIXUSER_ID,a.FIXUSER_NAME A_FIXUSER_NAME,a.FIX_DEPT_ID A_FIX_DEPT_ID,
+		      a.ORDER_DGREE A_ORDER_DGREE, (select CODE_NAME from t_common_code where code_key='ORDER_DGREE' and code_id=a.ORDER_DGREE) A_ORDER_DGREE_NAME, 
+		      a.ORDER_MARK A_ORDER_MARK,to_char(a.CREAT_TIME,'yyyy-mm-dd HH24:mi:ss') A_CREAT_TIME,a.UPDATE_TIME A_UPDATE_TIME,a.FIX_MARK A_FIX_MARK,
+		      to_char(a.TOFIXDEPT_TIME,'yyyy-mm-dd HH24:mi:ss') A_TOFIXDEPT_TIME,to_char(a.TOFIXPERSON_TIME,'yyyy-mm-dd HH24:mi:ss') A_TOFIXPERSON_TIME,
+		      to_char(a.COMMIT_TIME,'yyyy-mm-dd HH24:mi:ss') A_COMMIT_TIME,to_char(a.RETURN_VISIT_TIME,'yyyy-mm-dd HH24:mi:ss') A_RETURN_VISIT_TIME, a.PHONE A_PHONE,a.CUST_ADDRESS A_CUST_ADDRESS,
+		      
+		      b.MAXACCEPT B_MAXACCEPT,
+		      b.PHONE B_PHONE,
+		     b.CALL_TIME B_CALL_TIME,
+		      b.CONVER_DEGREE B_CONVER_DEGREE,
+		      TO_CHAR(b.CREATE_TIME,'yyyy-mm-dd HH24:mi:ss') B_CREATE_TIME,
+		      b.OPR_ID B_OPR_ID,
+		      b.OPR_NAME B_OPR_NAME,
+		      b.TALK_TIME B_TALK_TIME,
+		      b.HANGUP_TIME B_HANGUP_TIME,
+		      b.WAIT_LENGTH B_WAIT_LENGTH,
+		      b.TALK_LENGTH B_TALK_LENGTH,
+		      b.TALK_FLAG B_TALK_FLAG,
+		      b.RECORD_FILE B_RECORD_FILE,
+		      b.IN_FLAG B_IN_FLAG,
+		      b.TYPE_ID B_TYPE_ID,
+		      b.THE_GUID B_THE_GUID,
+		      b.CALL_TYPE B_CALL_TYPE,
+		      b.UPLOAD_TIME B_UPLOAD_TIME,
+		      b.UPLOAD_FLAG B_UPLOAD_FLAG
+		 from t_order a left join t_conversation b on a.cs_id=b.maxaccept where 1=1 
+		 <if test="orderChannel != null and orderChannel != ''">
+			AND a.ORDER_CHANNEL=#{orderChannel}
+		  </if>
+		  <if test="roleLevel == '1'.toString() and kf_maxaccept ==  ''">
+			 AND a.OPR_DEPT_ID = #{oprDeptID} 
+		  </if>
+		  <if test="roleLevel == '2'.toString()">
+			 AND a.OPR_ID = #{oprID} 
+		  </if>
+		  <if test="kf_maxaccept != null and kf_maxaccept != ''">
+			 AND a.OPR_ID = #{kf_maxaccept} 
+		  </if>
+		  <if test="beginTime != null and beginTime != ''">
+			 AND a.CREAT_TIME >= #{beginTime} 
+		  </if>
+		  <if test="endTime != null and endTime != ''">
+		  	<![CDATA[ AND a.CREAT_TIME <= #{endTime}]]>
+		  </if>
+		 order by a.creat_time desc
+	</select>
+	
+</mapper>  

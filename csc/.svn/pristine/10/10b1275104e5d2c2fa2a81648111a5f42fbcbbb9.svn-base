@@ -1,0 +1,24 @@
+package com.yl.transaction.kfManager.dao;
+
+import java.util.List;
+import java.util.Map;
+
+public interface KFManagerDao {
+
+	List<Map<String, Object>> getOrderCount(Map<String, Object> param);
+
+	List<Map<String, Object>> getPhoneTime(Map<String, Object> param);
+
+	String getPhoneGood(Map<String, Object> param);
+
+	String getPhoneOk(Map<String, Object> param);
+
+	String getPhoneNo(Map<String, Object> param);
+
+	String getConverAccess(Map<String, Object> param);
+
+	String getConverUnAccess(Map<String, Object> param);
+
+	List<Map<String, String>> getNameList(Map<String, Object> param);
+	
+}

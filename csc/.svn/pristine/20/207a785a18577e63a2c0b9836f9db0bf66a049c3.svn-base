@@ -1,0 +1,46 @@
+package com.yl.PhoneInterface.service.impl;
+
+import java.util.List;
+import java.util.Map;
+import javax.annotation.Resource;
+import org.springframework.stereotype.Service;
+import com.yl.PhoneInterface.dao.PhoneInterfaceDao;
+import com.yl.PhoneInterface.service.PhoneInterfaceService;
+
+@Service("PhoneInterfaceService")
+public class PhoneInterfaceServiceImpl implements PhoneInterfaceService{
+
+	@Resource
+	private PhoneInterfaceDao phoneInterfaceDao;
+	
+	@Override
+	public void setPhoneList(Map<String, String> param) {
+		phoneInterfaceDao.setPhoneList(param);
+	}
+
+	@Override
+	public List<Map<String, String>> getPhoneList(Map<String, String> param) {
+		return phoneInterfaceDao.getPhoneList(param);
+	}
+
+	@Override
+	public void updatePhoneStatus(Map<String, String> param) {
+		phoneInterfaceDao.updatePhoneStatus(param);
+	}
+
+	@Override
+	public void insertCSInfo(Map<String, String> param) {
+		phoneInterfaceDao.insertCSInfo(param);
+	}
+
+	@Override
+	public void insertOnlineFlag(Map<String, String> param) {
+		phoneInterfaceDao.insertOnlineFlag(param);
+	}
+
+	@Override
+	public String getOnlineFlag(Map<String, String> param) {
+		return phoneInterfaceDao.getOnlineFlag(param);
+	}
+
+}

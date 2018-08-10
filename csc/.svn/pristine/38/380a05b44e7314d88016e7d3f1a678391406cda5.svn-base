@@ -1,0 +1,19 @@
+package com.yl.PhoneInterface.service;
+
+import java.util.List;
+import java.util.Map;
+
+public interface PhoneInterfaceService {
+
+	public void setPhoneList(Map<String, String> param);
+	
+	public List<Map<String, String>> getPhoneList(Map<String, String> param);
+	
+	public void updatePhoneStatus(Map<String, String> param);
+	
+	public void insertCSInfo(Map<String, String> param);
+	
+	public void insertOnlineFlag(Map<String, String> param);
+	
+	public String getOnlineFlag(Map<String, String> param);
+}
